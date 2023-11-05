@@ -17,7 +17,7 @@ var cfgFile string
 var rootCmd = &cobra.Command{
 	Use:   "inspector",
 	Short: "Inspector: username verification companion.",
-	Long:  ` Inspector is a powerful tool designed to help you verify usernames across various platforms.`,
+	Long:  `Inspector is a powerful tool designed to help you verify usernames across various platforms.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
