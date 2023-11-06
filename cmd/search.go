@@ -4,6 +4,7 @@ Copyright © 2023 Hitesh Rana hitesh22rana@gmail.com
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime"
@@ -17,8 +18,9 @@ var (
 	client = &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	wg       sync.WaitGroup
-	maxProcs = runtime.NumCPU()
+	wg                           sync.WaitGroup
+	maxProcs                     = runtime.NumCPU()
+	ErrorNoSearchPlatformChoosen = errors.New("please specify atleast one platform to search")
 )
 
 // searchCmd represents the username command
@@ -44,7 +46,11 @@ var searchCmd = &cobra.Command{
 		}
 
 		username := args[0]
-		webSites := getWebSitesList(username)
+		webSites, err := getWebSitesList(username, false, false)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
 		searchMatches := Search(webSites)
 
 		if len(searchMatches) < 1 {
@@ -84,7 +90,49 @@ type SearchResult struct {
 	url  string
 }
 
-func getWebSitesList(username string) []*WebSite {
+func getSocialWebsitesList(username string) []*WebSite {
+	webSites := []*WebSite{
+		{
+			name: "LinkedIn",
+			url:  fmt.Sprintf("https://www.linkedin.com/in/%s", username),
+			check: func(res *http.Response) bool {
+				return res.StatusCode == 200
+			},
+		},
+		{
+			name: "Facebook",
+			url:  fmt.Sprintf("https://www.facebook.com/%s", username),
+			check: func(res *http.Response) bool {
+				return res.StatusCode == 200
+			},
+		},
+		{
+			name: "Instagram",
+			url:  fmt.Sprintf("https://www.instagram.com/%s", username),
+			check: func(res *http.Response) bool {
+				return res.StatusCode == 200
+			},
+		},
+		{
+			name: "Twitter",
+			url:  fmt.Sprintf("https://twitter.com/%s", username),
+			check: func(res *http.Response) bool {
+				return res.StatusCode == 200
+			},
+		},
+		{
+			name: "BioLink",
+			url:  fmt.Sprintf("https://bio.link/%s", username),
+			check: func(res *http.Response) bool {
+				return res.StatusCode == 200
+			},
+		},
+	}
+
+	return webSites
+}
+
+func getTechWebsitesList(username string) []*WebSite {
 	webSites := []*WebSite{
 		{
 			name: "LeetCode",
@@ -107,9 +155,42 @@ func getWebSitesList(username string) []*WebSite {
 				return res.StatusCode == 200
 			},
 		},
+		{
+			name: "HackerEarth",
+			url:  fmt.Sprintf("https://www.hackerearth.com/@%s", username),
+			check: func(res *http.Response) bool {
+				return res.StatusCode == 200
+			},
+		},
+		{
+			name: "Codechef",
+			url:  fmt.Sprintf("https://www.codechef.com/users/%s", username),
+			check: func(res *http.Response) bool {
+				return res.StatusCode == 200
+			},
+		},
 	}
 
 	return webSites
+}
+
+func getWebSitesList(username string, social bool, tech bool) ([]*WebSite, error) {
+	var webSites []*WebSite
+
+	if !social && !tech {
+		return webSites, ErrorNoSearchPlatformChoosen
+	}
+
+	if social {
+		webSites = append(webSites, getSocialWebsitesList(username)...)
+	}
+
+	if tech {
+		webSites = append(webSites, getTechWebsitesList(username)...)
+	}
+
+	return webSites, nil
+
 }
 
 func Search(webSites []*WebSite) []*SearchResult {
