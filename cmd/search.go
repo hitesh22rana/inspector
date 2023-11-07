@@ -20,8 +20,28 @@ var (
 	}
 	wg                           sync.WaitGroup
 	maxProcs                     = runtime.NumCPU()
+	ErrorNoUsernameProvided      = errors.New("please specify a username to search")
 	ErrorNoSearchPlatformChoosen = errors.New("please specify atleast one platform to search")
 )
+
+// function to validate platform flags
+func validatePlatformFlag(platformFlag []string) error {
+	if len(platformFlag) < 1 {
+		return ErrorNoSearchPlatformChoosen
+	}
+
+	for _, value := range platformFlag {
+		switch value {
+		case "social":
+			continue
+		case "tech":
+			continue
+		default:
+			return fmt.Errorf("invalid platform %s", value)
+		}
+	}
+	return nil
+}
 
 // searchCmd represents the username command
 var searchCmd = &cobra.Command{
@@ -42,11 +62,23 @@ var searchCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			cobra.CheckErr(fmt.Errorf("search needs a username to search"))
+			cobra.CheckErr(ErrorNoUsernameProvided)
+		}
+
+		platforms, err := cmd.Flags().GetStringSlice("platform")
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+
+		err = validatePlatformFlag(platforms)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
 		}
 
 		username := args[0]
-		webSites, err := getWebSitesList(username, false, false)
+		webSites, err := getWebSitesList(username, platforms)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -67,16 +99,7 @@ var searchCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(searchCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// searchCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// searchCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	searchCmd.Flags().StringSliceP("platform", "p", []string{"social"}, "Platform(s) to search users on")
 }
 
 type WebSite struct {
@@ -174,19 +197,16 @@ func getTechWebsitesList(username string) []*WebSite {
 	return webSites
 }
 
-func getWebSitesList(username string, social bool, tech bool) ([]*WebSite, error) {
+func getWebSitesList(username string, platforms []string) ([]*WebSite, error) {
 	var webSites []*WebSite
 
-	if !social && !tech {
-		return webSites, ErrorNoSearchPlatformChoosen
-	}
-
-	if social {
-		webSites = append(webSites, getSocialWebsitesList(username)...)
-	}
-
-	if tech {
-		webSites = append(webSites, getTechWebsitesList(username)...)
+	for _, platform := range platforms {
+		switch platform {
+		case "social":
+			webSites = append(webSites, getSocialWebsitesList(username)...)
+		case "tech":
+			webSites = append(webSites, getTechWebsitesList(username)...)
+		}
 	}
 
 	return webSites, nil
