@@ -48,18 +48,6 @@ var searchCmd = &cobra.Command{
 	Use:   "search [username]",
 	Short: "Searches for the given username on different platforms.",
 	Long:  `Search (inspector search) will search for the provided username on different platforms.`,
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		var comps []string
-
-		if len(args) == 0 {
-			comps = cobra.AppendActiveHelp(comps, "Please specify the username to search")
-		} else if len(args) == 1 {
-			comps = cobra.AppendActiveHelp(comps, "This command does not take any more arguments (but may accept flags)")
-		} else {
-			comps = cobra.AppendActiveHelp(comps, "ERROR: Too many arguments specified")
-		}
-		return comps, cobra.ShellCompDirectiveNoFileComp
-	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
 			cobra.CheckErr(ErrorNoUsernameProvided)
