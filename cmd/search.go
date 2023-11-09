@@ -180,6 +180,20 @@ func getTechWebsitesList(username string) []*WebSite {
 				return res.StatusCode == 200
 			},
 		},
+		{
+			name: "Hackerrank",
+			url:  fmt.Sprintf("https://www.hackerrank.com/profile/%s", username),
+			check: func(res *http.Response) bool {
+				return res.StatusCode == 200
+			},
+		},
+		{
+			name: "Replit",
+			url:  fmt.Sprintf("https://replit.com/@%s", username),
+			check: func(res *http.Response) bool {
+				return res.StatusCode == 200
+			},
+		},
 	}
 
 	return webSites
